@@ -37,6 +37,7 @@ class Scanner():
         return
 
     def scanDate(self, date):
+        found = False
         url = "http://www.cgv.co.kr/theaters/?theatercode=0013&areacode=01&date=" + date
         self.driver.get(url)
         wait(self.driver, 3).until(lambda d: d.find_element(By.CSS_SELECTOR, ("iframe#ifrm_movie_time_table")))
@@ -62,16 +63,17 @@ class Scanner():
                         start_time = content[i].get_attribute("data-playstarttime")
                         cnt_seat = content[i].get_attribute("data-seatremaincnt")
                         messages.append(f"{movie_title} {date} {start_time}\n남은 좌석: {cnt_seat}")
-                print(f"@scanDate - IMAX is about to open! {date}")
+                print(f"@scanDate - IMAX {movie_title} is about to open! {date}\n")
                 updater.bot.send_message(5794019445, "\n".join(messages))
-                return True
-        print(f"@scanDate - IMAX is not yet opened {date}")
-        return False
+                found = True
+        if not found:
+            print(f"@scanDate - IMAX is not yet opened {date}")
+        return found
         # self.driver.switch_to.default_content()
 if __name__ == "__main__":
     scanner = Scanner()
     sc = Scheduler()
-    date = "20221012"
+    date = "20221010"
     sc.setup_scanning(scanner.scanDate, [date], 60, datetime.now(), "imax finder")
     while True:
         pass
