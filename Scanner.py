@@ -27,21 +27,33 @@ dispatcher = updater.dispatcher
 # updater.idle()
 path = r'C:\Users\bitle\Downloads\chromedriver_win32\chromedriver.exe'
 options = webdriver.ChromeOptions()
-# options.add_argument('headless')
+options.add_argument('headless')
+user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
+options.add_argument(f'user-agent={user_agent}')
 # options.add_argument("--no-sandbox")
 class Scanner():
     driver = None
     notifier = None
     def __init__(self):
         self.driver = webdriver.Chrome(executable_path=path, chrome_options=options)
-        return
 
     def scanDate(self, date):
         found = False
         url = "http://www.cgv.co.kr/theaters/?theatercode=0013&areacode=01&date=" + date
         self.driver.get(url)
-        wait(self.driver, 3).until(lambda d: d.find_element(By.CSS_SELECTOR, ("iframe#ifrm_movie_time_table")))
+        # self.driver.save_screenshot('iframe.png')
+        # body = self.driver.find_element(By.ID, "cgvwrap")
+        # ht = body.size["height"]+1000
+        # self.driver.set_window_size(1920, ht)
+        # time.sleep(1)
+        # self.driver.save_screenshot("test.png")
+        # body.screenshot('test2.png')
+        #self.save_screenshot(self.driver)
+        frame = wait(self.driver, 3).until(lambda d: d.find_element(By.ID, "ifrm_movie_time_table"))
+        #body = self.driver.find_element(By.CSS_SELECTOR, ("iframe#ifrm_movie_time_table > html > body"))
+        #frame.screenshot('test.png')
         self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR, ("iframe#ifrm_movie_time_table")))
+        #wait(self.driver, 3).until(lambda d: d.find_element(By.CSS_SELECTOR, (".col-times")))
         movie_list = self.driver.find_elements(By.CSS_SELECTOR, (".col-times"))
         #movie_list = self.driver.find_elements(By.CSS_SELECTOR, ("iframe#ifrm_movie_time_table > html > body > div.showtimes-wrap > div.sect-showtimes > ul > li"))
         for i in range(len(movie_list)):
@@ -73,7 +85,7 @@ class Scanner():
 if __name__ == "__main__":
     scanner = Scanner()
     sc = Scheduler()
-    date = "20221010"
+    date = "20221012"
     sc.setup_scanning(scanner.scanDate, [date], 60, datetime.now(), "imax finder")
     while True:
         pass
