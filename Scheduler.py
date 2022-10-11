@@ -48,7 +48,7 @@ class Scheduler:
     def listener_notification_sent(self, event):
         if not event.exception:
             print(f"@listener_notification_sent - listens to event on '{event.job_id}', return value is {event.retval}")
-            if event.retval == True:
+            if event.retval:
                 print(f"@listener_notification_sent - ends the task '{event.job_id}' as seats open and it sent the update {datetime.now()}")
                 self.kill_scheduler(event.job_id)
         else:

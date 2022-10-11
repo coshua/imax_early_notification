@@ -4,6 +4,7 @@ from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import UnexpectedAlertPresentException
 from telegram import Update, Bot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import logging
@@ -92,7 +93,8 @@ class Scanner():
         # self.driver.switch_to.default_content()
 
     def openReservationPage(self, url):
-        self.driver.get(url)
+        if url:
+            self.driver.get(url)
         frame = wait(self.driver, 3).until(lambda d: d.find_element(By.ID, "ticket_iframe"))
         self.driver.switch_to.frame(self.driver.find_element(By.CSS_SELECTOR, ("iframe#ticket_iframe")))
         next_button = wait(self.driver, 5).until(EC.element_to_be_clickable((By.ID, "tnb_step_btn_right")))
@@ -117,11 +119,22 @@ class Scanner():
         Returns:
             None
         """ 
-        wait(self.driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#ticket > div.steps > div.step.step2 > a"))).send_keys(Keys.ENTER)
-        seats_available = []
-        #row = (3, 5)
-        col = (16, 29)
-        wait(self.driver, 5).until(lambda d: d.find_element(By.CSS_SELECTOR, f"#nop_group_adult > ul > li:nth-child({n + 1})")).click()
+        try:
+            wait(self.driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#ticket > div.steps > div.step.step2 > a"))).send_keys(Keys.ENTER)
+            seats_available = []
+            #row = (3, 5)
+            col = (16, 29)
+            wait(self.driver, 5).until(lambda d: d.find_element(By.CSS_SELECTOR, f"#nop_group_adult > ul > li:nth-child({n + 1})")).click()
+        except UnexpectedAlertPresentException as e:
+            next_button = wait(self.driver, 5).until(EC.element_to_be_clickable((By.ID, "tnb_step_btn_right")))
+            while next_button.get_attribute("className") != "btn-right on":
+                time.sleep(0.5)
+            # class="dimm" 로딩 아이콘에 클릭 막힘
+            time.sleep(1)
+            next_button.click()
+            blocking = wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "blackscreen"))
+            time.sleep(1)
+            self.driver.execute_script('document.getElementById("blackscreen").style["display"]="None";')
         rows = []
         for i in range(row[0], min(row[1], 9)):
             rows.append(self.driver.find_element(By.CSS_SELECTOR, f"#seats_list > div:nth-child(1) > div:nth-child({i}) > div:nth-child(4)"))
@@ -156,7 +169,7 @@ if __name__ == "__main__":
     sc = Scheduler()
     scanner.login()
     scanner.openReservationPage("http://www.cgv.co.kr/ticket/?MOVIE_CD=20030777&MOVIE_CD_GROUP=20023836&PLAY_YMD=20221015&THEATER_CD=0013&PLAY_START_TM=1345&AREA_CD=13&SCREEN_CD=018")
-    scanner.findCancelSeat(2)
+    #scanner.findCancelSeat(2)
     #sc.setup_scanning(scanner.scanDate, [date], 60, datetime.now(), "imax finder")
     sc.setup_scanning(scanner.findCancelSeat, [2], 60, datetime.now(), "seat finder tenet")
     while True:
